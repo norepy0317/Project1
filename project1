@@ -1,0 +1,132 @@
+echo "# Project1" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/norepy0317/Project1.git
+git push -u origin main
+
+import json
+
+# Item class
+class Item:
+    def __init__(self, item_id, title, author, quantity_in_stock, price):
+        self.item_id = item_id
+        self.title = title
+        self.author = author
+        self.quantity_in_stock = quantity_in_stock
+        self.price = price
+
+    def update_quantity(self, new_quantity):
+        """Updates the quantity of the item in stock."""
+        self.quantity_in_stock = new_quantity
+
+    def get_details(self):
+        """Returns a dictionary with item details."""
+        return {
+            'ID': self.item_id,
+            'Title': self.title,
+            'Author': self.author,
+            'Quantity in Stock': self.quantity_in_stock,
+            'Price': self.price
+        }
+
+
+# Inventory class
+class Inventory:
+    def __init__(self):
+        self.items = []
+
+    def add_item(self, item):
+        """Adds a new item to the inventory."""
+        self.items.append(item)
+
+    def remove_item(self, item_id):
+        """Removes an item from the inventory by ID."""
+        self.items = [item for item in self.items if item.item_id != item_id]
+
+    def update_inventory(self, item_id, new_quantity):
+        """Updates the quantity of an item in the inventory."""
+        for item in self.items:
+            if item.item_id == item_id:
+                item.update_quantity(new_quantity)
+                return f"Quantity of '{item.title}' updated."
+        return "Item not found."
+
+    def list_items(self):
+        """Returns a list of all items in the inventory."""
+        return [item.get_details() for item in self.items]
+
+    def check_stock(self, item_id):
+        """Checks the stock of a specific item by ID."""
+        for item in self.items:
+            if item.item_id == item_id:
+                return item.quantity_in_stock
+        return "Item not found."
+
+    def save_to_file(self, filename):
+        """Saves the inventory to a JSON file."""
+        data = [item.get_details() for item in self.items]
+        with open(filename, 'w') as f:
+            json.dump(data, f, indent=4)
+
+    def load_from_file(self, filename):
+        """Loads inventory data from a JSON file."""
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+                for item_data in data:
+                    item = Item(
+                        item_data['ID'], item_data['Title'], item_data['Author'],
+                        item_data['Quantity in Stock'], item_data['Price']
+                    )
+                    self.add_item(item)
+        except FileNotFoundError:
+            print("File not found. Starting with an empty inventory.")
+
+
+# Report class
+class Report:
+    def __init__(self, inventory):
+        self.inventory = inventory
+
+    def low_stock_report(self, threshold=5):
+        """Generates a report of items with stock below a certain threshold."""
+        low_stock_items = [
+            item.get_details() for item in self.inventory.items
+            if item.quantity_in_stock < threshold
+        ]
+        return low_stock_items
+
+    def generate_report(self):
+        """Generates a general inventory report."""
+        return self.inventory.list_items()
+
+
+# Example usage:
+if __name__ == "__main__":
+    # Create the inventory system
+    inventory = Inventory()
+
+    # Add items to the inventory
+    book1 = Item(1, "The Great Gatsby", "F. Scott Fitzgerald", 10, 15.99)
+    book2 = Item(2, "1984", "George Orwell", 4, 12.99)
+    inventory.add_item(book1)
+    inventory.add_item(book2)
+
+    # Check stock
+    print(inventory.check_stock(1))  # Should print 10
+
+    # Update stock
+    inventory.update_inventory(2, 2)
+
+    # Save inventory to file
+    inventory.save_to_file("inventory.json")
+
+    # Load inventory from file
+    inventory.load_from_file("inventory.json")
+
+    # Generate report
+    report = Report(inventory)
+    print("Low stock items:", report.low_stock_report())
+    print("Inventory report:", report.generate_report())
